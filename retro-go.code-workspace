@@ -97,5 +97,8 @@
 		"files.watcherExclude": {
 			"**/build/**": true,
 		},
+		"files.associations": {
+			"miniz.h": "c"
+		},
 	}
 }

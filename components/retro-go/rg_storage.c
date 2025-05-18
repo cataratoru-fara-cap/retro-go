@@ -507,7 +507,7 @@ bool rg_storage_write_file(const char *path, const void *data_ptr, size_t data_l
  */
 #if RG_ZIP_SUPPORT
 
-#ifdef ESP_PLATFORM
+#if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_IDF_TARGET_ESP32S3)
 #include <rom/miniz.h>
 #else
 #include <miniz.h>

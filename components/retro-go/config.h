@@ -1,5 +1,7 @@
 #if defined(RG_TARGET_ODROID_GO)
 #include "targets/odroid-go/config.h"
+#elif defined(RG_TARGET_ARDUINO_NANO_S3)
+#include "targets/arduino-nano-s3/config.h"
 #elif defined(RG_TARGET_MRGC_G32)
 #include "targets/mrgc-g32/config.h"
 #elif defined(RG_TARGET_QTPY_GAMER)
