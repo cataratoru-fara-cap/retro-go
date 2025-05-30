@@ -1,5 +1,7 @@
 #include "rg_system.h"
+#include "ff.h"
 
+// Ensure ff.h (which includes ffconf.h) is included
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -398,17 +400,13 @@ bool rg_storage_scandir(const char *path, rg_scandir_cb_t *callback, void *arg, 
 
 int64_t rg_storage_get_free_space(const char *path)
 {
-    // Here we should translate the provided VFS path to the matching filesystem driver and drive
-    // But we don't. Instead we just assume it's drive 0 of the fatfs driver. Yay laziness.
-#ifdef ESP_PLATFORM
-    DWORD nclst;
     FATFS *fatfs;
-    if (f_getfree("0:", &nclst, &fatfs) == FR_OK)
-    {
-        return (int64_t)nclst * fatfs->csize * fatfs->ssize;
-    }
-#endif
+    DWORD nclst;
 
+    if (f_getfree(path, &nclst, &fatfs) == FR_OK)
+    {
+        return (int64_t)nclst * fatfs->csize * FF_MIN_SS;
+    }
     return -1;
 }
 

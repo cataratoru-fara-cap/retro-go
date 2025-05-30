@@ -9,10 +9,10 @@
 PROJECT_NAME = "Retro-Go"
 PROJECT_ICON = "assets/icon.raw"
 PROJECT_APPS = {
-  # Project name  Type, SubType, Size
-  'launcher':     [0, 0, 917504],
-  'retro-core':   [0, 0, 917504],
-  'prboom-go':    [0, 0, 786432],
-  'gwenesis':     [0, 0, 983040],
-  'fmsx':         [0, 0, 589824],
+    # Project name  Type, SubType, Size
+    "launcher": [0, 0, 917504],
+    "retro-core": [0, 0, 917504],
+    "prboom-go": [0, 0, 786432],
+    "gwenesis": [0, 0, 983040],
+    "fmsx": [0, 0, 589824],
 }

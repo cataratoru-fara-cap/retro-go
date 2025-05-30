@@ -322,29 +322,29 @@ static void system_monitor_task(void *arg)
     }
 }
 
-static void enter_recovery_mode(void)
-{
-    RG_LOGW("Entering recovery mode...\n");
-
-    // FIXME: At this point we don't have valid settings, we should find way to get the user's language...
+static void enter_recovery_mode(void) {
+    RG_LOGW("Entering recovery mode...");
+    RG_LOGI("Recovery mode options initialized.");
     const rg_gui_option_t options[] = {
         {0, _("Reset all settings"), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
-        {1, _("Reboot to factory "), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
+        {1, _("Reboot to factory"), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         {2, _("Reboot to launcher"), NULL, RG_DIALOG_FLAG_NORMAL, NULL},
         RG_DIALOG_END,
     };
-    while (true)
-    {
-        switch (rg_gui_dialog(_("Recovery mode"), options, -1))
-        {
+    while (true) {
+        RG_LOGI("Displaying recovery mode dialog.");
+        switch (rg_gui_dialog(_("Recovery mode"), options, -1)) {
         case 0:
+            RG_LOGI("Reset all settings selected.");
             rg_storage_delete(RG_BASE_PATH_CONFIG);
             rg_storage_delete(RG_BASE_PATH_CACHE);
             break;
         case 1:
+            RG_LOGI("Reboot to factory selected.");
             rg_system_switch_app(RG_APP_FACTORY, 0, 0, 0);
         case 2:
         default:
+            RG_LOGI("Reboot to launcher selected.");
             rg_system_exit();
         }
     }
@@ -388,6 +388,7 @@ rg_app_t *rg_system_reinit(int sampleRate, const rg_handlers_t *handlers, void *
 
 rg_app_t *rg_system_init(int sampleRate, const rg_handlers_t *handlers, void *_unused)
 {
+    RG_LOGI("System initialization started.");
     RG_ASSERT(app.initialized == false, "rg_system_init() was already called.");
     bool enterRecoveryMode = false;
     bool showCrashDialog = false;
@@ -443,12 +444,14 @@ rg_app_t *rg_system_init(int sampleRate, const rg_handlers_t *handlers, void *_u
     rg_input_init();
 
     // Test for recovery request as early as possible
+    RG_LOGI("Checking recovery mode trigger.");
     for (int timeout = 5, btn; (btn = rg_input_read_gamepad() & RG_RECOVERY_BTN) && timeout >= 0; --timeout)
     {
-        RG_LOGW("Button " PRINTF_BINARY_16 " being held down...\n", PRINTF_BINVAL_16(btn));
+        RG_LOGW("Button %d being held down...", btn);
         enterRecoveryMode = (timeout == 0);
         rg_task_delay(100);
     }
+    RG_LOGI("Recovery mode trigger checked.");
 
     rg_settings_init(enterRecoveryMode || showCrashDialog);
     app.configNs = rg_settings_get_string(NS_BOOT, SETTING_BOOT_NAME, app.configNs);
@@ -459,11 +462,12 @@ rg_app_t *rg_system_init(int sampleRate, const rg_handlers_t *handlers, void *_u
 
     if (enterRecoveryMode)
     {
+        RG_LOGI("Recovery mode triggered.");
         enter_recovery_mode();
     }
     else if (showCrashDialog)
     {
-        RG_LOGE("Recoverying from panic!\n");
+        RG_LOGE("Recoverying from panic!");
         char message[400] = "Application crashed";
         if (panicTrace.magicWord == RG_STRUCT_MAGIC)
         {
@@ -517,6 +521,7 @@ rg_app_t *rg_system_init(int sampleRate, const rg_handlers_t *handlers, void *_u
             statistics.freeMemoryExt / 1024, statistics.totalMemoryExt / 1024);
     RG_LOGI("Retro-Go ready.\n\n");
 
+    RG_LOGI("System initialization completed.");
     return &app;
 }
 
@@ -1385,10 +1390,17 @@ rg_emu_states_t *rg_emu_get_states(const char *romPath, size_t slots)
 
 bool rg_emu_reset(bool hard)
 {
+    RG_LOGI("Entering rg_emu_reset. app.speed: %f, app.handlers.reset: %p", app.speed, app.handlers.reset);
+
     if (app.speed != 1.f)
         rg_emu_set_speed(1.f);
-    if (app.handlers.reset)
+
+    if (app.handlers.reset != NULL) {
+        RG_LOGI("Calling reset handler with hard: %d", hard);
         return app.handlers.reset(hard);
+    }
+
+    RG_LOGE("Reset handler is not initialized.");
     return false;
 }
 

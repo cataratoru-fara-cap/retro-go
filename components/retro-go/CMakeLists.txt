@@ -54,3 +54,10 @@ component_compile_options(-DRG_BUILD_TIME=${RG_BUILD_TIME})
 message(STATUS "RG_PROJECT_APP: ${RG_PROJECT_APP}")
 message(STATUS "RG_PROJECT_VER: ${RG_PROJECT_VER}")
 message(STATUS "RG_BUILD_INFO: ${RG_BUILD_INFO}")
+
+target_include_directories(${COMPONENT_LIB} PUBLIC
+    "${COMPONENT_DIR}/"
+    "${COMPONENT_DIR}/libs/lodepng"
+    "${COMPONENT_DIR}/libs/miniz"
+    "${COMPONENT_DIR}/libs/netplay"
+)

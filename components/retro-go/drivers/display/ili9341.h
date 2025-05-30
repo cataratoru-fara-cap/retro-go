@@ -240,17 +240,31 @@ static void lcd_init(void)
     rg_usleep(10 * 1000);
 #endif
 
-    ILI9341_CMD(0x01);          // Reset
-    rg_usleep(5 * 1000);        // Wait 5ms after reset
-    ILI9341_CMD(0x3A, 0X05);    // Pixel Format Set RGB565
+    // ST7735 Initialization Sequence
+    ILI9341_CMD(0x01);      // Software Reset
+    rg_usleep(150 * 1000);  // Wait 150ms after reset
+
+    ILI9341_CMD(0x11);      // Sleep Out
+    rg_usleep(120 * 1000);  // Wait 120ms after sleep out (minimum required by datasheet before other commands)
+                            // Some ST7735 variants might benefit from a longer delay (e.g., 250-500ms)
+
+    // RG_SCREEN_INIT() is crucial for ST7735. It should define:
+    // - Memory Access Control (MADCTL, command 0x36) for orientation and color order (RGB/BGR).
+    // - Pixel Format (COLMOD, command 0x3A), e.g., 0x05 for 16-bit RGB565.
+    // - Frame Rate Control (FRMCTR1, FRMCTR2, FRMCTR3 - commands 0xB1, 0xB2, 0xB3).
+    // - Display Inversion Control (INVCTR, command 0xB4).
+    // - Power Control settings (PWCTR1-5, commands 0xC0-0xC4).
+    // - VCOM Control (VMCTR1, command 0xC5).
+    // - Gamma Correction (GMCTRP1, GMCTRN1 - commands 0xE0, 0xE1).
+    // - Optionally, Normal Display Mode On (NORON, command 0x13).
     #ifdef RG_SCREEN_INIT
         RG_SCREEN_INIT();
     #else
-        #warning "LCD init sequence is not defined for this device!"
+        #warning "ST7735: RG_SCREEN_INIT() is not defined. Critical settings (MADCTL, COLMOD, Gamma, etc.) for the ST7735 display will be missing!"
     #endif
-    ILI9341_CMD(0x11);  // Exit Sleep
-    rg_usleep(10 * 1000);// Wait 10ms after sleep out
-    ILI9341_CMD(0x29);  // Display on
+
+    ILI9341_CMD(0x29);      // Display ON
+    rg_usleep(10 * 1000);   // Wait a short moment after Display ON
 
     rg_display_clear(C_BLACK);
     rg_usleep(10 * 1000);

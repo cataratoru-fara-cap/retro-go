@@ -4,7 +4,9 @@ import os
 import shutil
 
 OUTPUT_DIR = "build/release"
-TARGETS = [os.path.basename(t[0:-1]) for t in glob.glob("components/retro-go/targets/*/")]
+TARGETS = [
+    os.path.basename(t[0:-1]) for t in glob.glob("components/retro-go/targets/*/")
+]
 
 shutil.rmtree(OUTPUT_DIR, ignore_errors=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)

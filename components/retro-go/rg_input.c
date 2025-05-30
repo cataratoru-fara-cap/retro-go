@@ -10,7 +10,7 @@
 #include <driver/adc.h>
 // This is a lazy way to silence deprecation notices on some esp-idf versions...
 // This hardcoded value is the first thing to check if something stops working!
-#define ADC_ATTEN_DB_11 3
+#define ADC_ATTEN_DB_11 1024
 #else
 #include <SDL2/SDL.h>
 #endif
@@ -106,12 +106,14 @@ bool rg_input_read_battery_raw(rg_battery_t *out)
 bool rg_input_read_gamepad_raw(uint32_t *out)
 {
     uint32_t state = 0;
+    RG_LOGI("Reading gamepad raw input...");
 
 #if defined(RG_GAMEPAD_ADC_MAP)
     for (size_t i = 0; i < RG_COUNT(keymap_adc); ++i)
     {
         const rg_keymap_adc_t *mapping = &keymap_adc[i];
         int value = adc_get_raw(mapping->unit, mapping->channel);
+        RG_LOGI("ADC channel %d raw value: %d (min: %d, max: %d) for key %d", mapping->channel, value, mapping->min, mapping->max, mapping->key);
         if (value >= mapping->min && value <= mapping->max)
             state |= mapping->key;
     }
@@ -121,7 +123,9 @@ bool rg_input_read_gamepad_raw(uint32_t *out)
     for (size_t i = 0; i < RG_COUNT(keymap_gpio); ++i)
     {
         const rg_keymap_gpio_t *mapping = &keymap_gpio[i];
-        if (gpio_get_level(mapping->num) == mapping->level)
+        int gpio_level = gpio_get_level(mapping->num);
+        RG_LOGI("GPIO %d level: %d (expected: %d) for key %d", mapping->num, gpio_level, mapping->level, mapping->key);
+        if (gpio_level == mapping->level)
             state |= mapping->key;
     }
 #endif
@@ -188,6 +192,7 @@ bool rg_input_read_gamepad_raw(uint32_t *out)
     }
 #endif
 
+    RG_LOGI("Gamepad raw state: %u", state);
     if (out)
         *out = state;
     return true;
@@ -200,8 +205,8 @@ static void input_task(void *arg)
     uint32_t state;
     int64_t next_battery_update = 0;
 
-    // Start the task with debounce history full to allow a button held during boot to be detected
-    memset(debounce, 0xFF, sizeof(debounce));
+    // Initialize debounce history to zeros instead of 0xFF
+    memset(debounce, 0, sizeof(debounce));
     input_task_running = true;
 
     while (input_task_running)
@@ -248,6 +253,8 @@ static void input_task(void *arg)
 
 void rg_input_init(void)
 {
+    RG_LOGI("Initializing input system...");
+
     RG_ASSERT(!input_task_running, "Input already initialized!");
 
 #if defined(RG_GAMEPAD_ADC_MAP)
@@ -328,7 +335,7 @@ void rg_input_init(void)
     rg_task_create("rg_input", &input_task, NULL, 3 * 1024, RG_TASK_PRIORITY_6, 1);
     while (gamepad_state == -1)
         rg_task_yield();
-    RG_LOGI("Input ready. state=" PRINTF_BINARY_16 "\n", PRINTF_BINVAL_16(gamepad_state));
+    RG_LOGI("Input system initialized. Gamepad state: %u", gamepad_state);
 }
 
 void rg_input_deinit(void)
@@ -354,13 +361,18 @@ bool rg_input_key_is_pressed(rg_key_t mask)
 
 bool rg_input_wait_for_key(rg_key_t mask, bool pressed, int timeout_ms)
 {
+    RG_LOGI("Waiting for key %d to be %s...", mask, pressed ? "pressed" : "released");
     int64_t expiration = timeout_ms < 0 ? INT64_MAX : (rg_system_timer() + timeout_ms * 1000);
     while (rg_input_key_is_pressed(mask) != pressed)
     {
         if (rg_system_timer() > expiration)
+        {
+            RG_LOGW("Timeout waiting for key %d.", mask);
             return false;
+        }
         rg_task_delay(10);
     }
+    RG_LOGI("Key %d %s detected.", mask, pressed ? "press" : "release");
     return true;
 }
 
